@@ -44,11 +44,26 @@ public class PolygonController : MonoBehaviour {
 		}
 	}
 
+
+	// ポリゴンドラッグ時の[最大サイズ]、[初期サイズ]、[拡大速度]
+	private float maxScale = 2.0f;
+	private float initialScale = 1.5f;
+	private float acceleration4PolygonScale = 0.1f;
+
 	// Update is called once per frame
 	void Update () {
-		// ドラッグ中は処理しない。
+		// ドラッグ中の処理
 		if (this.isDragged) {
+			// ドラッグ中は少し大きく
+			if (this.transform.localScale.x < maxScale) {
+				this.transform.localScale += new Vector3 (acceleration4PolygonScale, acceleration4PolygonScale, 0);
+			}
 			return;
+		} else {
+			// ドラッグ中は少し大きく
+			if (this.transform.localScale.x > initialScale) {
+				this.transform.localScale -= new Vector3 (acceleration4PolygonScale, acceleration4PolygonScale, 0);
+			}
 		}
 
 		// ご近所探し
@@ -69,7 +84,7 @@ public class PolygonController : MonoBehaviour {
 			this.mood = Mood.Sad;
 			mainSpriteRendere.sprite = sad;
 			// ゆらゆら (http://albatrus.com/main/unity/7461) 
-			transform.Rotate (new Vector3 (0f, 0f, Mathf.Sin (Time.time * 4f)));
+			transform.Rotate (new Vector3 (0.0f, 0.0f, Mathf.Sin (Time.time * 4.0f)));
 
 		} else if (neighbors == 0 || ratio > 0.99f) {
 			// bored
@@ -87,12 +102,25 @@ public class PolygonController : MonoBehaviour {
 		// Debug.Log ("same="+same + " neighbors="+neighbors + " order=" + this.gameObject.GetComponent<Renderer> ().sortingOrder);
 	}
 
-	float dangle = 0.0f;
-	float dangleVel = 0.0f;
+	// もといた位置
+	float potentialX = 0.0f;
+	float potentialY = 0.0f;
 
 	void OnMouseDown() {
+		// 回転を正位置に戻す（宙ぶらりんからの戻りを考慮して）
 		transform.localRotation = Quaternion.identity;
+
+		// もといた位置
+		potentialX = transform.position.x;
+		potentialY = transform.position.y;
+
 	}
+
+	// 宙ぶらりん角度？
+	private float dangle = 0.0f;
+
+	// 加速度
+	private float dangleVel = 0.0f;
 
 	void OnMouseDrag () {
 		// unhappyの時だけ移動可能
@@ -122,7 +150,7 @@ public class PolygonController : MonoBehaviour {
 		// 移動量 ref.http://phisz.blog.fc2.com/blog-entry-25.html
 		float mouse_x_delta = Input.GetAxis("Mouse X");
 		dangle += mouse_x_delta * 5.0f;
-		transform.Rotate (new Vector3 (0f, 0f, -dangle));
+		transform.Rotate (new Vector3 (0.0f, 0.0f, -dangle));
 		dangleVel += dangle * (-0.2f);
 		dangle += dangleVel;
 		dangle *= 0.9f;
@@ -136,6 +164,10 @@ public class PolygonController : MonoBehaviour {
 		// 宙吊り解除
 		dangle = 0.0f;
 		dangleVel = 0.0f;
+
+		// TODO: その位置に向かわせる。3平方の定理的なあれでいけそうなきがする。
+
+		// dragged解除
 		this.isDragged = false;
 	}
 }
