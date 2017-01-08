@@ -46,9 +46,9 @@ public class PolygonController : MonoBehaviour {
 
 
 	// ポリゴンドラッグ時の[最大サイズ]、[初期サイズ]、[拡大速度]
-	private float maxScale = 2.0f;
+	private float maxScale = 2.5f;
 	private float initialScale = 1.5f;
-	private float acceleration4PolygonScale = 0.1f;
+	private float acceleration4PolygonScale = 0.2f;
 
 	// Update is called once per frame
 	void Update () {
@@ -164,6 +164,9 @@ public class PolygonController : MonoBehaviour {
 		// 宙吊り解除
 		dangle = 0.0f;
 		dangleVel = 0.0f;
+
+		// 回転を正位置に戻す（宙ぶらりんからの戻りを考慮して）
+		transform.localRotation = Quaternion.identity;
 
 		// TODO: その位置に向かわせる。3平方の定理的なあれでいけそうなきがする。
 
