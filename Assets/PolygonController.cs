@@ -15,7 +15,7 @@ public class PolygonController : MonoBehaviour {
 	public Sprite meh;
 
 	// ムード
-	private enum Mood {Yay, Sad, Meh};
+	public enum Mood {Yay, Sad, Meh};
 
 	// ご近所リスト
 	List<GameObject> colList = new List<GameObject>();
@@ -28,6 +28,8 @@ public class PolygonController : MonoBehaviour {
 
 	// polygon generator
 	GameObject polygonGenerator;
+
+	private bool gameIsClear = false;
 
 	// Use this for initialization
 	void Start () {
@@ -60,9 +62,24 @@ public class PolygonController : MonoBehaviour {
 	private float maxScale = 2.5f;
 	private float initialScale = 1.5f;
 	private float acceleration4PolygonScale = 0.2f;
+	private float doneAnimFrame = 30.0f;
 
 	// Update is called once per frame
 	void Update () {
+		// TODO clear effect
+//		if (this.gameIsClear) {
+//			// Clear Effect
+//			if (doneAnimFrame > 0) {
+//				doneAnimFrame--;
+//				float opacity = ((doneAnimFrame % 15f) / 15f) * 0.2f;
+//				Debug.Log ("doneAnimFrame = " + doneAnimFrame + "  opacity = " + opacity);
+//				Camera.main.backgroundColor = new Vector4 (255f, 255f, 255f, opacity);
+//			} else {
+//				Camera.main.backgroundColor = Color.black;
+//			}
+//			return;
+//		}
+
 		// ドラッグ中の処理
 		if (this.isDragged) {
 			// ドラッグ中は少し大きく
@@ -77,39 +94,7 @@ public class PolygonController : MonoBehaviour {
 			}
 		}
 
-		// ご近所探し
-		int same = 0;
-		int neighbors = 0;
-		for (int i = 0; i < colList.Count; i++) {
-			neighbors++;
-			if (gameObject.tag == colList [i].tag) {
-				same++;
-			}
-		}
-
-		float ratio = (float) same / neighbors;
-		//		Debug.Log("same / neighbors = " + same + " / " + neighbors + " = " + ratio);
-
-		// 状態判定
-		if (neighbors > 0 && ratio < 0.33f) {
-			// unhappy
-			this.mood = Mood.Sad;
-			mainSpriteRendere.sprite = sad;
-			// ゆらゆら (http://albatrus.com/main/unity/7461) 
-			transform.Rotate (new Vector3 (0.0f, 0.0f, Mathf.Sin (Time.time * 4.0f)));
-
-		} else if (neighbors == 0 || ratio > 0.99f) {
-			// bored
-			this.mood = Mood.Meh;
-			mainSpriteRendere.sprite = meh;
-			// 姿勢はまっすぐ ref.https://ookumaneko.wordpress.com/2015/10/01/unity%E3%83%A1%E3%83%A2-transform%E3%81%AB%E3%83%AA%E3%82%BB%E3%83%83%E3%83%88%E5%87%A6%E7%90%86%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B/
-			transform.localRotation = Quaternion.identity;
-		} else {
-			this.mood = Mood.Yay;
-			mainSpriteRendere.sprite = yay;
-			// 姿勢はまっすぐ
-			transform.localRotation = Quaternion.identity;
-		}
+		this.setMood ();
 
 		// Debug.Log ("same="+same + " neighbors="+neighbors + " order=" + this.gameObject.GetComponent<Renderer> ().sortingOrder);
 	}
@@ -141,7 +126,7 @@ public class PolygonController : MonoBehaviour {
 	void OnMouseDrag () {
 		// unhappyの時だけ移動可能
 		if (this.mood == Mood.Meh || this.mood == Mood.Yay ) {
-			Debug.Log ("i don't want to move. i feel like " + mood.ToString());
+			//Debug.Log ("i don't want to move. i feel like " + mood.ToString());
 			return;
 		}
 		// dragged
@@ -206,6 +191,13 @@ public class PolygonController : MonoBehaviour {
 			// だれもいなかったら、そこへGo
 			transform.position = new Vector3 (gotoX, gotoY, transform.position.z);
 		}
+
+		// クリア判定の為
+		this.setMood();
+
+		// クリア判定
+		this.gameIsClear = this.gameClear();
+
 		// dragged解除
 		this.isDragged = false;
 	}
@@ -227,5 +219,60 @@ public class PolygonController : MonoBehaviour {
 			}
 		}
 		return false;
+	}
+
+	/// <summary>
+	/// Sets the mood.
+	/// </summary>
+	private void setMood () {
+		// ご近所探し
+		int same = 0;
+		int neighbors = 0;
+		for (int i = 0; i < colList.Count; i++) {
+			neighbors++;
+			if (gameObject.tag == colList [i].tag) {
+				same++;
+			}
+		}
+
+		float ratio = (float) same / neighbors;
+		//		Debug.Log("same / neighbors = " + same + " / " + neighbors + " = " + ratio);
+
+		// 状態判定
+		if (neighbors > 0 && ratio < 0.33f) {
+			// unhappy
+			this.mood = Mood.Sad;
+			mainSpriteRendere.sprite = sad;
+			// ゆらゆら (http://albatrus.com/main/unity/7461) 
+			transform.Rotate (new Vector3 (0.0f, 0.0f, Mathf.Sin (Time.time * 4.0f)));
+
+		} else if (neighbors == 0 || ratio > 0.99f) {
+			// bored
+			this.mood = Mood.Meh;
+			mainSpriteRendere.sprite = meh;
+			// 姿勢はまっすぐ ref.https://ookumaneko.wordpress.com/2015/10/01/unity%E3%83%A1%E3%83%A2-transform%E3%81%AB%E3%83%AA%E3%82%BB%E3%83%83%E3%83%88%E5%87%A6%E7%90%86%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B/
+			transform.localRotation = Quaternion.identity;
+		} else {
+			this.mood = Mood.Yay;
+			mainSpriteRendere.sprite = yay;
+			// 姿勢はまっすぐ
+			transform.localRotation = Quaternion.identity;
+		}
+
+	}
+
+	/// <summary>
+	/// Games the clear.
+	/// </summary>
+	/// <returns><c>true</c>, if clear was gamed, <c>false</c> otherwise.</returns>
+	private bool gameClear() {
+		List<GameObject> polygons = this.polygonGenerator.GetComponent<PolygonGenerator> ().polygons;
+		for (int i = 0; i < polygons.Count; i++) {
+			PolygonController polygon = polygons [i].GetComponent<PolygonController> ();
+			if (polygon.mood == Mood.Sad) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
