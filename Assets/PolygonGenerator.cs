@@ -8,8 +8,11 @@ public class PolygonGenerator : MonoBehaviour {
 
 	public GameObject trianglePrefab;
 
+	public List<GameObject> polygons;
+
 	// Use this for initialization
 	void Start () {
+		this.polygons = new List<GameObject>();
 		this.reset ();
 	}
 	
@@ -19,17 +22,19 @@ public class PolygonGenerator : MonoBehaviour {
 	}
 
 	void reset () {
-		const int Ratio = 8;
-		const int TileSize = 1;
+		const int FrequencyAppearance = 8;
 		for (int i = -8; i < 10; i = i + 2) {
 			for (int j = -4; j < 6; j = j + 2) {
 				// 8割の出現率
-				if (Random.Range(1, 11) < Ratio) {
+				if (Random.Range(1, 11) < FrequencyAppearance) {
 					// 1/2の比率で配置
 					GameObject polygon = Random.Range(0, 2) < 1 ? Instantiate(trianglePrefab) : Instantiate(squarePrefab);
-					float x = (float)i;
-					float y = (float)j;
-					polygon.transform.position = new Vector3 (x, y, 0f);
+
+					float positionX = (float)i;
+					float positionY = (float)j;
+
+					polygon.transform.position = new Vector3 (positionX, positionY, 0f);
+					polygons.Add (polygon);
 				}
 			}
 		}

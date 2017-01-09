@@ -14,6 +14,7 @@ public class PolygonController : MonoBehaviour {
 	// 退屈だ
 	public Sprite meh;
 
+	// ムード
 	private enum Mood {Yay, Sad, Meh};
 
 	// ご近所リスト
@@ -25,12 +26,19 @@ public class PolygonController : MonoBehaviour {
 	// mood
 	private Mood mood;
 
+	// polygon generator
+	GameObject polygonGenerator;
+
 	// Use this for initialization
 	void Start () {
-		mainSpriteRendere = gameObject.GetComponent<SpriteRenderer> ();
+		this.mainSpriteRendere = gameObject.GetComponent<SpriteRenderer> ();
+		this.polygonGenerator = GameObject.Find ("PolygonGenerator");
 	}
-
-
+		
+	/// <summary>
+	/// Raises the trigger enter2 d event.
+	/// </summary>
+	/// <param name="other">Other.</param>
 	void OnTriggerEnter2D(Collider2D other) {
 		// 近所さがし
 		if (!this.colList.Contains(other.gameObject)) {
@@ -38,12 +46,15 @@ public class PolygonController : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Raises the trigger exit2 d event.
+	/// </summary>
+	/// <param name="other">Other.</param>
 	void OnTriggerExit2D(Collider2D other) {
 		if (this.colList.Contains(other.gameObject)) {
 			this.colList.Remove (other.gameObject);
 		}
 	}
-
 
 	// ポリゴンドラッグ時の[最大サイズ]、[初期サイズ]、[拡大速度]
 	private float maxScale = 2.5f;
@@ -75,6 +86,7 @@ public class PolygonController : MonoBehaviour {
 				same++;
 			}
 		}
+
 		float ratio = (float) same / neighbors;
 		//		Debug.Log("same / neighbors = " + same + " / " + neighbors + " = " + ratio);
 
@@ -103,14 +115,15 @@ public class PolygonController : MonoBehaviour {
 	}
 
 	// もといた位置
-	float potentialX = 0.0f;
-	float potentialY = 0.0f;
+	private float potentialX = 0.0f;
+	private float potentialY = 0.0f;
 
+	/// <summary>
+	/// Raises the mouse down event.
+	/// </summary>
 	void OnMouseDown() {
 		// 回転を正位置に戻す（宙ぶらりんからの戻りを考慮して）
 		transform.localRotation = Quaternion.identity;
-
-		// もといた位置
 		potentialX = transform.position.x;
 		potentialY = transform.position.y;
 
@@ -122,6 +135,9 @@ public class PolygonController : MonoBehaviour {
 	// 加速度
 	private float dangleVel = 0.0f;
 
+	/// <summary>
+	/// Raises the mouse drag event.
+	/// </summary>
 	void OnMouseDrag () {
 		// unhappyの時だけ移動可能
 		if (this.mood == Mood.Meh || this.mood == Mood.Yay ) {
@@ -157,6 +173,9 @@ public class PolygonController : MonoBehaviour {
 
 	}
 
+	/// <summary>
+	/// Raises the mouse up event.
+	/// </summary>
 	void OnMouseUp() {
 		// 最前面に表示していたものを元に戻す
 		this.gameObject.GetComponent<Renderer> ().sortingOrder = 1;
@@ -168,9 +187,45 @@ public class PolygonController : MonoBehaviour {
 		// 回転を正位置に戻す（宙ぶらりんからの戻りを考慮して）
 		transform.localRotation = Quaternion.identity;
 
-		// TODO: その位置に向かわせる。3平方の定理的なあれでいけそうなきがする。
+		// 移動可能判定
+		// 行き先を計算
+		float gotoX = Mathf.Round(transform.position.x);
+		float gotoY = Mathf.Round(transform.position.y);
 
+		if (Mathf.Abs(gotoX % 2) == 1) {
+			gotoX += 1.0f;
+		}
+		if (Mathf.Abs(gotoY % 2) == 1) {
+			gotoY += 1.0f;
+		}
+
+		if (this.ExistsPolygon (transform, gotoX, gotoY)) {
+			// すでにそこにいたら、もといた場所へ戻る
+			transform.position = new Vector3 (potentialX, potentialY, transform.position.z);
+		} else {
+			// だれもいなかったら、そこへGo
+			transform.position = new Vector3 (gotoX, gotoY, transform.position.z);
+		}
 		// dragged解除
 		this.isDragged = false;
+	}
+
+	/// <summary>
+	/// Existses the polygon.
+	/// </summary>
+	/// <returns><c>true</c>, if polygon was existsed, <c>false</c> otherwise.</returns>
+	/// <param name="transform">Transform.</param>
+	/// <param name="gotoX">Goto x.</param>
+	/// <param name="gotoY">Goto y.</param>
+	private bool ExistsPolygon (Transform transform, float gotoX, float gotoY) {
+		List<GameObject> polygons = this.polygonGenerator.GetComponent<PolygonGenerator> ().polygons;
+
+		for (int i = 0; i < polygons.Count; i++) {
+			if (polygons[i].transform.position.x == gotoX
+				&& polygons[i].transform.position.y == gotoY) {
+					return true;
+			}
+		}
+		return false;
 	}
 }
